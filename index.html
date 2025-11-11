@@ -6,6 +6,7 @@
     <title>🚀 Cosmic Rocket</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* Стили остаются без изменений */
         * {
             margin: 0;
             padding: 0;
@@ -726,6 +727,7 @@
                 // Отправляем запрос на зачисление выигрыша в бот
                 const winResult = await sendWinToBot(winAmount, multiplier);
                 if (winResult.success) {
+                    // Обновляем локальный баланс только после подтверждения от бота
                     userBalance += winAmount;
                     message = `🎉 ВЫ ВЫИГРАЛИ ${winAmount.toFixed(2)} TON!\nСтавка: ${currentBet} TON × ${multiplier.toFixed(2)}x`;
                     wins++;
@@ -737,6 +739,9 @@
                 message = `💥 ВЫ ПРОИГРАЛИ ${currentBet} TON!\nРакета взорвалась на ${multiplier.toFixed(2)}x`;
                 losses++;
                 addToHistory(multiplier.toFixed(2), 'lose', 0);
+                
+                // Отправляем информацию о проигрыше в бот
+                await sendLossToBot();
             }
             
             totalGames++;
@@ -754,7 +759,6 @@
                     bet: currentBet,
                     multiplier: parseFloat(finalMultiplier.toFixed(2)),
                     win_amount: parseFloat(winAmount.toFixed(2)),
-                    new_balance: parseFloat((userBalance + winAmount).toFixed(2)),
                     timestamp: Date.now()
                 };
                 
@@ -780,8 +784,6 @@
                     user_id: userData.id,
                     bet: currentBet,
                     multiplier: parseFloat(multiplier.toFixed(2)),
-                    win_amount: 0,
-                    new_balance: parseFloat(userBalance.toFixed(2)),
                     timestamp: Date.now()
                 };
                 
