@@ -332,6 +332,12 @@
             margin: 10px 0;
             border: 1px solid #ef4444;
         }
+
+        .loading {
+            color: #a0a0c0;
+            text-align: center;
+            padding: 20px;
+        }
     </style>
 </head>
 <body>
@@ -343,7 +349,7 @@
 
         <div class="balance-info">
             <div>Ваш баланс:</div>
-            <div class="balance-amount" id="balance">0.00 TON</div>
+            <div class="balance-amount" id="balance">Загрузка...</div>
         </div>
 
         <div class="bet-selection">
@@ -361,7 +367,7 @@
             </div>
         </div>
 
-        <div class="current-bet" id="currentBetDisplay">
+        <div class="current-bet" id="currentBetDisplay" style="display: none;">
             Текущая ставка: <span id="currentBetAmount">0</span> TON
         </div>
 
@@ -379,7 +385,7 @@
             </div>
 
             <div class="controls">
-                <button class="btn btn-start" id="startBtn">СТАРТ</button>
+                <button class="btn btn-start" id="startBtn" disabled>СТАРТ</button>
                 <button class="btn btn-cashout" id="cashoutBtn" disabled>ЗАБРАТЬ</button>
             </div>
 
@@ -418,6 +424,7 @@
         let currentBet = 0;
         let userBalance = 0;
         let userData = {};
+        let tg = null;
 
         // Статистика
         let gameHistory = [];
@@ -446,53 +453,70 @@
         // Инициализация Telegram Web App
         function initTelegramApp() {
             if (window.Telegram && Telegram.WebApp) {
-                Telegram.WebApp.ready();
-                Telegram.WebApp.expand();
+                tg = Telegram.WebApp;
+                tg.ready();
+                tg.expand();
                 
-                // Получаем данные из бота
-                const initData = Telegram.WebApp.initData;
-                const initDataUnsafe = Telegram.WebApp.initDataUnsafe;
-                
-                console.log('Init data:', initData);
-                console.log('User data:', initDataUnsafe.user);
-                
-                // Парсим параметры URL для получения баланса
-                const urlParams = new URLSearchParams(window.location.search);
-                const balance = parseFloat(urlParams.get('balance')) || 100.00;
-                const userId = urlParams.get('user_id') || 'unknown';
+                // Получаем данные пользователя
+                const user = tg.initDataUnsafe.user;
+                const queryParams = tg.initDataUnsafe.query_id ? 
+                    `?user_id=${user.id}&start_param=${tg.initData}` : 
+                    `?user_id=${user.id}`;
                 
                 userData = {
-                    id: userId,
-                    balance: balance
+                    id: user.id,
+                    username: user.username || `user_${user.id}`,
+                    firstName: user.first_name,
+                    lastName: user.last_name
                 };
                 
-                userBalance = balance;
-                updateBalanceDisplay();
+                console.log('Telegram Web App initialized:', userData);
                 
-                console.log('User balance:', userBalance);
+                // Загружаем баланс пользователя
+                loadUserBalance();
                 
             } else {
-                // Для тестирования без Telegram
+                // Режим разработки - используем тестовые данные
+                console.log('Running in development mode');
                 userData = {
-                    id: 'test_user',
-                    balance: 100.00
+                    id: 'test_user_123',
+                    username: 'test_user',
+                    firstName: 'Test',
+                    lastName: 'User'
                 };
-                userBalance = 100.00;
+                
+                // Для тестирования устанавливаем баланс
+                userBalance = 50.00;
                 updateBalanceDisplay();
-                console.log('Running in test mode');
+                enableGameControls();
+            }
+        }
+
+        // Загрузка баланса пользователя
+        async function loadUserBalance() {
+            try {
+                // В реальном приложении здесь должен быть запрос к вашему API
+                // Для демонстрации используем фиктивный баланс
+                userBalance = 50.00; // Это должно приходить из бота
+                updateBalanceDisplay();
+                enableGameControls();
+                
+            } catch (error) {
+                console.error('Error loading balance:', error);
+                showError('Ошибка загрузки баланса');
             }
         }
 
         // Генерация точки взрыва
         function generateCrashPoint() {
             const r = Math.random();
-            if (r < 0.1) return 1.00 + Math.random() * 0.3;    // 10% шанс очень раннего взрыва
-            if (r < 0.25) return 1.30 + Math.random() * 0.7;   // 15% шанс раннего взрыва
-            if (r < 0.45) return 2.00 + Math.random() * 1.0;   // 20% шанс
-            if (r < 0.65) return 3.00 + Math.random() * 2.0;   // 20% шанс
-            if (r < 0.8) return 5.00 + Math.random() * 3.0;    // 15% шанс
-            if (r < 0.9) return 8.00 + Math.random() * 5.0;    // 10% шанс
-            return 13.00 + Math.random() * 12.0;               // 10% шанс высокого множителя
+            if (r < 0.1) return 1.00 + Math.random() * 0.3;
+            if (r < 0.25) return 1.30 + Math.random() * 0.7;
+            if (r < 0.45) return 2.00 + Math.random() * 1.0;
+            if (r < 0.65) return 3.00 + Math.random() * 2.0;
+            if (r < 0.8) return 5.00 + Math.random() * 3.0;
+            if (r < 0.9) return 8.00 + Math.random() * 5.0;
+            return 13.00 + Math.random() * 12.0;
         }
 
         // Обновление множителя
@@ -511,7 +535,6 @@
 
         // Выбор ставки
         function setupBetButtons() {
-            // Обработчики для кнопок ставок
             betButtons.querySelectorAll('.bet-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const bet = parseFloat(this.dataset.bet);
@@ -519,7 +542,6 @@
                 });
             });
 
-            // Обработчик для кастомной ставки
             customBetInput.addEventListener('input', function() {
                 const bet = parseFloat(this.value);
                 if (bet > 0) {
@@ -527,7 +549,6 @@
                 }
             });
 
-            // Выбираем ставку по умолчанию
             selectBet(1);
         }
 
@@ -543,25 +564,20 @@
             hideError();
             currentBet = bet;
             
-            // Обновляем отображение
             currentBetAmountElement.textContent = currentBet.toFixed(2);
             currentBetDisplay.style.display = 'block';
             
-            // Сбрасываем активные кнопки
             betButtons.querySelectorAll('.bet-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             
-            // Активируем соответствующую кнопку
             const activeBtn = Array.from(betButtons.querySelectorAll('.bet-btn'))
                 .find(btn => parseFloat(btn.dataset.bet) === bet);
             if (activeBtn) {
                 activeBtn.classList.add('active');
             }
             
-            // Обновляем кастомное поле
             customBetInput.value = bet === parseFloat(customBetInput.value) ? bet : '';
-            
             updateMultiplierDisplay();
         }
 
@@ -574,6 +590,12 @@
         // Скрыть ошибку
         function hideError() {
             errorMessage.style.display = 'none';
+        }
+
+        // Включение игровых контролов
+        function enableGameControls() {
+            startBtn.disabled = false;
+            balanceElement.textContent = userBalance.toFixed(2) + ' TON';
         }
 
         // Начало игры
@@ -594,7 +616,7 @@
             multiplier = 1.00;
             crashPoint = generateCrashPoint();
             
-            // Списываем ставку (в реальном приложении это делает бот)
+            // В реальном приложении здесь должен быть запрос к боту для списания средств
             userBalance -= currentBet;
             updateBalanceDisplay();
             
@@ -604,19 +626,17 @@
             resultElement.innerHTML = '';
             hideError();
             
-            // Медленная скорость - обновление каждые 200мс вместо 100мс
             gameInterval = setInterval(updateGame, 200);
             
             console.log('Game started. Bet:', currentBet, 'Crash point:', crashPoint.toFixed(2));
         }
 
-        // Обновление игры (МЕДЛЕННАЯ СКОРОСТЬ)
+        // Обновление игры
         function updateGame() {
             if (!gameActive) return;
 
-            // Медленный рост множителя
-            const baseIncrement = 0.03; // Было 0.05 - теперь медленнее
-            const speedMultiplier = 1 + (multiplier * 0.001); // Меньшее ускорение
+            const baseIncrement = 0.03;
+            const speedMultiplier = 1 + (multiplier * 0.001);
             multiplier += baseIncrement * speedMultiplier;
             
             updateMultiplierDisplay();
@@ -645,7 +665,6 @@
             let message = '';
             
             if (isWin) {
-                // Зачисляем выигрыш
                 userBalance += winAmount;
                 message = `🎉 ВЫ ВЫИГРАЛИ ${winAmount.toFixed(2)} TON!\nСтавка: ${currentBet} TON × ${multiplier.toFixed(2)}x`;
                 wins++;
@@ -686,11 +705,17 @@
 
         // Отправка результата в Telegram бот
         function sendResultToBot(result) {
-            if (window.Telegram && Telegram.WebApp) {
-                Telegram.WebApp.sendData(JSON.stringify(result));
+            if (tg) {
+                // Отправляем данные обратно в бот
+                tg.sendData(JSON.stringify(result));
                 console.log('Result sent to bot:', result);
+                
+                // Закрываем Web App после отправки результата
+                setTimeout(() => {
+                    tg.close();
+                }, 3000);
             } else {
-                console.log('Game result (test mode):', result);
+                console.log('Game result (development mode):', result);
             }
         }
 
@@ -753,11 +778,9 @@
             initTelegramApp();
             setupBetButtons();
             updateMultiplierDisplay();
-            updateBalanceDisplay();
             updateStats();
             updateHistoryDisplay();
             
-            // Назначаем обработчики кнопок
             startBtn.addEventListener('click', startGame);
             cashoutBtn.addEventListener('click', cashOut);
             
