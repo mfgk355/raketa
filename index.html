@@ -27,21 +27,21 @@
             background: rgba(30, 30, 60, 0.95);
             backdrop-filter: blur(20px);
             border-radius: 20px;
-            padding: 30px;
+            padding: 25px;
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.1);
             text-align: center;
         }
 
         .header {
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+            font-size: 2.2rem;
+            margin-bottom: 8px;
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -50,11 +50,78 @@
 
         .header p {
             color: #a0a0c0;
-            font-size: 1.1rem;
+            font-size: 1rem;
+        }
+
+        .balance-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .balance-amount {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #10b981;
+        }
+
+        .bet-selection {
+            margin: 20px 0;
+        }
+
+        .bet-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .bet-btn {
+            padding: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .bet-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #6366f1;
+        }
+
+        .bet-btn.active {
+            background: #6366f1;
+            border-color: #6366f1;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+        }
+
+        .custom-bet {
+            margin-top: 15px;
+        }
+
+        .custom-bet input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        .custom-bet input:focus {
+            outline: none;
+            border-color: #6366f1;
         }
 
         .rocket-container {
-            margin: 30px 0;
+            margin: 25px 0;
             position: relative;
             height: 120px;
             display: flex;
@@ -69,7 +136,7 @@
         }
 
         .rocket.flying {
-            animation: fly 1s infinite alternate;
+            animation: fly 1.5s infinite alternate;
         }
 
         .rocket.crashed {
@@ -78,7 +145,7 @@
 
         @keyframes fly {
             0% { transform: translateY(0px); }
-            100% { transform: translateY(-10px); }
+            100% { transform: translateY(-15px); }
         }
 
         @keyframes crash {
@@ -95,7 +162,7 @@
         }
 
         .multiplier {
-            font-size: 3rem;
+            font-size: 2.8rem;
             font-weight: bold;
             margin: 10px 0;
             text-shadow: 0 0 20px currentColor;
@@ -114,29 +181,14 @@
         .potential-win {
             color: #a0a0c0;
             margin-top: 10px;
+            font-size: 1.1rem;
         }
 
-        .bet-info {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 20px 0;
-        }
-
-        .info-card {
+        .current-bet {
             background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
+            padding: 12px;
             border-radius: 10px;
-        }
-
-        .info-label {
-            font-size: 0.9rem;
-            color: #a0a0c0;
-            margin-bottom: 5px;
-        }
-
-        .info-value {
-            font-size: 1.2rem;
+            margin: 15px 0;
             font-weight: bold;
         }
 
@@ -144,7 +196,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
-            margin: 25px 0;
+            margin: 20px 0;
         }
 
         .btn {
@@ -161,6 +213,7 @@
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none !important;
         }
 
         .btn-start {
@@ -189,6 +242,12 @@
             border-radius: 10px;
             font-size: 1.1rem;
             font-weight: bold;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .result.win {
@@ -228,10 +287,17 @@
             padding: 10px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
+            font-size: 0.9rem;
         }
 
-        .history-item.win { color: #10b981; }
-        .history-item.lose { color: #ef4444; }
+        .history-item.win { 
+            color: #10b981;
+            border-left: 3px solid #10b981;
+        }
+        .history-item.lose { 
+            color: #ef4444;
+            border-left: 3px solid #ef4444;
+        }
 
         .stats {
             display: grid;
@@ -257,14 +323,49 @@
             font-size: 0.8rem;
             color: #a0a0c0;
         }
+
+        .error {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #ef4444;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>🚀 COSMIC ROCKET</h1>
-            <p>Заберите выигрыш до взрыва!</p>
+            <p>Заберите выигрыш до взрыва ракеты!</p>
         </div>
+
+        <div class="balance-info">
+            <div>Ваш баланс:</div>
+            <div class="balance-amount" id="balance">0.00 TON</div>
+        </div>
+
+        <div class="bet-selection">
+            <h3>Выберите ставку:</h3>
+            <div class="bet-buttons" id="betButtons">
+                <button class="bet-btn" data-bet="1">1 TON</button>
+                <button class="bet-btn" data-bet="5">5 TON</button>
+                <button class="bet-btn" data-bet="10">10 TON</button>
+                <button class="bet-btn" data-bet="25">25 TON</button>
+                <button class="bet-btn" data-bet="50">50 TON</button>
+                <button class="bet-btn" data-bet="100">100 TON</button>
+            </div>
+            <div class="custom-bet">
+                <input type="number" id="customBet" placeholder="Другая сумма..." min="0.1" step="0.1">
+            </div>
+        </div>
+
+        <div class="current-bet" id="currentBetDisplay">
+            Текущая ставка: <span id="currentBetAmount">0</span> TON
+        </div>
+
+        <div id="errorMessage" class="error" style="display: none;"></div>
 
         <div class="game-area">
             <div class="rocket-container">
@@ -274,23 +375,12 @@
             <div class="multiplier-display">
                 <div class="multiplier-label">ТЕКУЩИЙ МНОЖИТЕЛЬ</div>
                 <div class="multiplier safe" id="multiplier">1.00x</div>
-                <div class="potential-win">Выигрыш: <span id="potentialWin">0.00</span> TON</div>
-            </div>
-
-            <div class="bet-info">
-                <div class="info-card">
-                    <div class="info-label">СТАВКА</div>
-                    <div class="info-value" id="currentBet">1.00 TON</div>
-                </div>
-                <div class="info-card">
-                    <div class="info-label">БАЛАНС</div>
-                    <div class="info-value" id="balance">100.00 TON</div>
-                </div>
+                <div class="potential-win">Потенциальный выигрыш: <span id="potentialWin">0.00</span> TON</div>
             </div>
 
             <div class="controls">
-                <button class="btn btn-start" id="startBtn" onclick="startGame()">СТАРТ</button>
-                <button class="btn btn-cashout" id="cashoutBtn" onclick="cashOut()" disabled>ЗАБРАТЬ</button>
+                <button class="btn btn-start" id="startBtn">СТАРТ</button>
+                <button class="btn btn-cashout" id="cashoutBtn" disabled>ЗАБРАТЬ</button>
             </div>
 
             <div id="result"></div>
@@ -325,8 +415,9 @@
         let multiplier = 1.00;
         let gameInterval;
         let crashPoint = 0;
-        let betAmount = 1.00;
-        let userBalance = 100.00;
+        let currentBet = 0;
+        let userBalance = 0;
+        let userData = {};
 
         // Статистика
         let gameHistory = [];
@@ -338,7 +429,8 @@
         const rocketElement = document.getElementById('rocket');
         const multiplierElement = document.getElementById('multiplier');
         const potentialWinElement = document.getElementById('potentialWin');
-        const currentBetElement = document.getElementById('currentBet');
+        const currentBetAmountElement = document.getElementById('currentBetAmount');
+        const currentBetDisplay = document.getElementById('currentBetDisplay');
         const balanceElement = document.getElementById('balance');
         const startBtn = document.getElementById('startBtn');
         const cashoutBtn = document.getElementById('cashoutBtn');
@@ -347,6 +439,9 @@
         const totalGamesElement = document.getElementById('totalGames');
         const winsElement = document.getElementById('wins');
         const lossesElement = document.getElementById('losses');
+        const betButtons = document.getElementById('betButtons');
+        const customBetInput = document.getElementById('customBet');
+        const errorMessage = document.getElementById('errorMessage');
 
         // Инициализация Telegram Web App
         function initTelegramApp() {
@@ -354,40 +449,144 @@
                 Telegram.WebApp.ready();
                 Telegram.WebApp.expand();
                 
-                console.log('Telegram Web App initialized');
+                // Получаем данные из бота
+                const initData = Telegram.WebApp.initData;
+                const initDataUnsafe = Telegram.WebApp.initDataUnsafe;
+                
+                console.log('Init data:', initData);
+                console.log('User data:', initDataUnsafe.user);
+                
+                // Парсим параметры URL для получения баланса
+                const urlParams = new URLSearchParams(window.location.search);
+                const balance = parseFloat(urlParams.get('balance')) || 100.00;
+                const userId = urlParams.get('user_id') || 'unknown';
+                
+                userData = {
+                    id: userId,
+                    balance: balance
+                };
+                
+                userBalance = balance;
+                updateBalanceDisplay();
+                
+                console.log('User balance:', userBalance);
+                
+            } else {
+                // Для тестирования без Telegram
+                userData = {
+                    id: 'test_user',
+                    balance: 100.00
+                };
+                userBalance = 100.00;
+                updateBalanceDisplay();
+                console.log('Running in test mode');
             }
         }
 
         // Генерация точки взрыва
         function generateCrashPoint() {
             const r = Math.random();
-            if (r < 0.15) return 1.00 + Math.random() * 0.5;
-            if (r < 0.4) return 1.50 + Math.random() * 1.0;
-            if (r < 0.7) return 2.50 + Math.random() * 2.0;
-            if (r < 0.9) return 4.50 + Math.random() * 3.0;
-            return 7.50 + Math.random() * 8.5;
+            if (r < 0.1) return 1.00 + Math.random() * 0.3;    // 10% шанс очень раннего взрыва
+            if (r < 0.25) return 1.30 + Math.random() * 0.7;   // 15% шанс раннего взрыва
+            if (r < 0.45) return 2.00 + Math.random() * 1.0;   // 20% шанс
+            if (r < 0.65) return 3.00 + Math.random() * 2.0;   // 20% шанс
+            if (r < 0.8) return 5.00 + Math.random() * 3.0;    // 15% шанс
+            if (r < 0.9) return 8.00 + Math.random() * 5.0;    // 10% шанс
+            return 13.00 + Math.random() * 12.0;               // 10% шанс высокого множителя
         }
 
         // Обновление множителя
         function updateMultiplierDisplay() {
             multiplierElement.textContent = multiplier.toFixed(2) + 'x';
-            potentialWinElement.textContent = (betAmount * multiplier).toFixed(2);
+            potentialWinElement.textContent = (currentBet * multiplier).toFixed(2);
             
-            if (multiplier >= 8) {
+            if (multiplier >= 10) {
                 multiplierElement.className = 'multiplier danger';
-            } else if (multiplier >= 4) {
+            } else if (multiplier >= 5) {
                 multiplierElement.className = 'multiplier warning';
             } else {
                 multiplierElement.className = 'multiplier safe';
             }
         }
 
+        // Выбор ставки
+        function setupBetButtons() {
+            // Обработчики для кнопок ставок
+            betButtons.querySelectorAll('.bet-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const bet = parseFloat(this.dataset.bet);
+                    selectBet(bet);
+                });
+            });
+
+            // Обработчик для кастомной ставки
+            customBetInput.addEventListener('input', function() {
+                const bet = parseFloat(this.value);
+                if (bet > 0) {
+                    selectBet(bet);
+                }
+            });
+
+            // Выбираем ставку по умолчанию
+            selectBet(1);
+        }
+
+        // Выбор ставки
+        function selectBet(bet) {
+            if (gameActive) return;
+            
+            if (bet > userBalance) {
+                showError('Недостаточно средств для этой ставки!');
+                return;
+            }
+            
+            hideError();
+            currentBet = bet;
+            
+            // Обновляем отображение
+            currentBetAmountElement.textContent = currentBet.toFixed(2);
+            currentBetDisplay.style.display = 'block';
+            
+            // Сбрасываем активные кнопки
+            betButtons.querySelectorAll('.bet-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Активируем соответствующую кнопку
+            const activeBtn = Array.from(betButtons.querySelectorAll('.bet-btn'))
+                .find(btn => parseFloat(btn.dataset.bet) === bet);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
+            
+            // Обновляем кастомное поле
+            customBetInput.value = bet === parseFloat(customBetInput.value) ? bet : '';
+            
+            updateMultiplierDisplay();
+        }
+
+        // Показать ошибку
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        // Скрыть ошибку
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+
         // Начало игры
         function startGame() {
             if (gameActive) return;
             
-            if (userBalance < betAmount) {
-                showResult('❌ Недостаточно средств!', 'lose');
+            if (currentBet <= 0) {
+                showError('Выберите ставку!');
+                return;
+            }
+            
+            if (userBalance < currentBet) {
+                showError('Недостаточно средств на балансе!');
                 return;
             }
 
@@ -395,23 +594,30 @@
             multiplier = 1.00;
             crashPoint = generateCrashPoint();
             
-            userBalance -= betAmount;
+            // Списываем ставку (в реальном приложении это делает бот)
+            userBalance -= currentBet;
             updateBalanceDisplay();
             
             startBtn.disabled = true;
             cashoutBtn.disabled = false;
             rocketElement.className = 'rocket flying';
             resultElement.innerHTML = '';
+            hideError();
             
-            gameInterval = setInterval(updateGame, 100);
+            // Медленная скорость - обновление каждые 200мс вместо 100мс
+            gameInterval = setInterval(updateGame, 200);
+            
+            console.log('Game started. Bet:', currentBet, 'Crash point:', crashPoint.toFixed(2));
         }
 
-        // Обновление игры
+        // Обновление игры (МЕДЛЕННАЯ СКОРОСТЬ)
         function updateGame() {
             if (!gameActive) return;
 
-            const increment = 0.05 + (multiplier * 0.002);
-            multiplier += increment;
+            // Медленный рост множителя
+            const baseIncrement = 0.03; // Было 0.05 - теперь медленнее
+            const speedMultiplier = 1 + (multiplier * 0.001); // Меньшее ускорение
+            multiplier += baseIncrement * speedMultiplier;
             
             updateMultiplierDisplay();
 
@@ -435,32 +641,40 @@
             cashoutBtn.disabled = true;
             rocketElement.className = isWin ? 'rocket' : 'rocket crashed';
             
-            const winAmount = isWin ? betAmount * multiplier : 0;
+            const winAmount = isWin ? currentBet * multiplier : 0;
             let message = '';
             
             if (isWin) {
+                // Зачисляем выигрыш
                 userBalance += winAmount;
-                message = `🎉 ВЫ ВЫИГРАЛИ ${winAmount.toFixed(2)} TON!`;
+                message = `🎉 ВЫ ВЫИГРАЛИ ${winAmount.toFixed(2)} TON!\nСтавка: ${currentBet} TON × ${multiplier.toFixed(2)}x`;
                 wins++;
                 addToHistory(multiplier.toFixed(2), 'win', winAmount);
                 
-                // Отправка в бот
+                // Отправка результата в бот
                 sendResultToBot({
                     type: 'rocket_win',
-                    bet: betAmount,
-                    multiplier: multiplier,
-                    winAmount: winAmount
+                    user_id: userData.id,
+                    bet: currentBet,
+                    multiplier: parseFloat(multiplier.toFixed(2)),
+                    win_amount: parseFloat(winAmount.toFixed(2)),
+                    new_balance: parseFloat(userBalance.toFixed(2)),
+                    timestamp: Date.now()
                 });
             } else {
-                message = `💥 ВЗРЫВ НА ${multiplier.toFixed(2)}x!`;
+                message = `💥 ВЫ ПРОИГРАЛИ ${currentBet} TON!\nРакета взорвалась на ${multiplier.toFixed(2)}x`;
                 losses++;
                 addToHistory(multiplier.toFixed(2), 'lose', 0);
                 
+                // Отправка результата в бот
                 sendResultToBot({
-                    type: 'rocket_loss', 
-                    bet: betAmount,
-                    multiplier: multiplier,
-                    winAmount: 0
+                    type: 'rocket_loss',
+                    user_id: userData.id,
+                    bet: currentBet,
+                    multiplier: parseFloat(multiplier.toFixed(2)),
+                    win_amount: 0,
+                    new_balance: parseFloat(userBalance.toFixed(2)),
+                    timestamp: Date.now()
                 });
             }
             
@@ -470,17 +684,19 @@
             showResult(message, isWin ? 'win' : 'lose');
         }
 
-        // Отправка результата в бот
+        // Отправка результата в Telegram бот
         function sendResultToBot(result) {
             if (window.Telegram && Telegram.WebApp) {
                 Telegram.WebApp.sendData(JSON.stringify(result));
+                console.log('Result sent to bot:', result);
+            } else {
+                console.log('Game result (test mode):', result);
             }
-            console.log('Game result:', result);
         }
 
         // Показать результат
         function showResult(message, type) {
-            resultElement.innerHTML = message;
+            resultElement.innerHTML = message.replace(/\n/g, '<br>');
             resultElement.className = `result ${type}`;
         }
 
@@ -490,11 +706,17 @@
                 multiplier: multiplierValue,
                 result: result,
                 winAmount: winAmount,
-                time: new Date().toLocaleTimeString()
+                time: new Date().toLocaleTimeString('ru-RU', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    second: '2-digit'
+                })
             };
             
             gameHistory.unshift(historyItem);
-            if (gameHistory.length > 6) gameHistory = gameHistory.slice(0, 6);
+            if (gameHistory.length > 8) {
+                gameHistory = gameHistory.slice(0, 8);
+            }
             updateHistoryDisplay();
         }
 
@@ -509,7 +731,7 @@
                 <div class="history-item ${game.result}">
                     <span>${game.time}</span>
                     <span>${game.multiplier}x</span>
-                    <span>${game.result === 'win' ? '🎉' : '💥'}</span>
+                    <span>${game.result === 'win' ? '🎉 +' + game.winAmount.toFixed(1) + ' TON' : '💥'}</span>
                 </div>
             `).join('');
         }
@@ -523,19 +745,26 @@
 
         // Обновление баланса
         function updateBalanceDisplay() {
-            balanceElement.textContent = userBalance.toFixed(2);
+            balanceElement.textContent = userBalance.toFixed(2) + ' TON';
         }
 
         // Инициализация
         function init() {
             initTelegramApp();
+            setupBetButtons();
             updateMultiplierDisplay();
             updateBalanceDisplay();
             updateStats();
             updateHistoryDisplay();
+            
+            // Назначаем обработчики кнопок
+            startBtn.addEventListener('click', startGame);
+            cashoutBtn.addEventListener('click', cashOut);
+            
+            console.log('Rocket game initialized');
         }
 
-        // Запуск
+        // Запуск при загрузке страницы
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
