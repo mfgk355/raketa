@@ -573,7 +573,7 @@
         }
 
         // Начало игры
-        function startGame() {
+        async function startGame() {
             if (gameActive) return;
             
             if (currentBet <= 0) {
@@ -586,11 +586,19 @@
                 return;
             }
 
+            // Сначала отправляем запрос на списание ставки
+            const betResult = await sendBetToBot(currentBet);
+            if (!betResult.success) {
+                showError(betResult.error || 'Ошибка при списании средств');
+                return;
+            }
+
+            // Только после успешного списания начинаем игру
             gameActive = true;
             multiplier = 1.00;
             crashPoint = generateCrashPoint();
             
-            // Сразу списываем ставку локально
+            // Обновляем локальный баланс
             userBalance -= currentBet;
             updateBalanceDisplay();
             
@@ -603,6 +611,30 @@
             gameInterval = setInterval(updateGame, 200);
             
             console.log('Game started. Bet:', currentBet, 'Crash point:', crashPoint.toFixed(2));
+        }
+
+        // Отправка ставки в бот
+        async function sendBetToBot(betAmount) {
+            try {
+                const betData = {
+                    type: 'rocket_bet',
+                    user_id: userData.id,
+                    bet: betAmount,
+                    timestamp: Date.now()
+                };
+                
+                if (tg) {
+                    tg.sendData(JSON.stringify(betData));
+                    return { success: true };
+                } else {
+                    // В режиме разработки имитируем успешное списание
+                    console.log('Bet placed (dev mode):', betAmount);
+                    return { success: true };
+                }
+            } catch (error) {
+                console.error('Error sending bet to bot:', error);
+                return { success: false, error: 'Ошибка связи с ботом' };
+            }
         }
 
         // Обновление игры
@@ -627,7 +659,7 @@
         }
 
         // Завершение игры
-        function endGame(isWin) {
+        async function endGame(isWin) {
             gameActive = false;
             clearInterval(gameInterval);
             
@@ -638,53 +670,52 @@
             const winAmount = isWin ? currentBet * multiplier : 0;
             
             if (isWin) {
-                // Зачисляем выигрыш локально
-                userBalance += winAmount;
-                wins++;
-                addToHistory(multiplier.toFixed(2), 'win', winAmount);
-                
-                // Отправляем результат выигрыша в бот
-                sendGameResultToBot({
-                    type: 'rocket_win',
-                    user_id: userData.id,
-                    bet: currentBet,
-                    multiplier: parseFloat(multiplier.toFixed(2)),
-                    win_amount: parseFloat(winAmount.toFixed(2))
-                });
-                
-                showResult(`🎉 ВЫ ВЫИГРАЛИ ${winAmount.toFixed(2)} TON!\nСтавка: ${currentBet} TON × ${multiplier.toFixed(2)}x`, 'win');
+                // Отправляем запрос на зачисление выигрыша в бот
+                const winResult = await sendWinToBot(winAmount, multiplier);
+                if (winResult.success) {
+                    // Обновляем локальный баланс только после подтверждения от бота
+                    userBalance += winAmount;
+                    message = `🎉 ВЫ ВЫИГРАЛИ ${winAmount.toFixed(2)} TON!\nСтавка: ${currentBet} TON × ${multiplier.toFixed(2)}x`;
+                    wins++;
+                    addToHistory(multiplier.toFixed(2), 'win', winAmount);
+                } else {
+                    message = `❌ Ошибка зачисления выигрыша!\nОбратитесь в поддержку.`;
+                }
             } else {
+                message = `💥 ВЫ ПРОИГРАЛИ ${currentBet} TON!\nРакета взорвалась на ${multiplier.toFixed(2)}x`;
                 losses++;
                 addToHistory(multiplier.toFixed(2), 'lose', 0);
-                
-                // Отправляем результат проигрыша в бот
-                sendGameResultToBot({
-                    type: 'rocket_loss', 
-                    user_id: userData.id,
-                    bet: currentBet,
-                    multiplier: parseFloat(multiplier.toFixed(2)),
-                    win_amount: 0
-                });
-                
-                showResult(`💥 ВЫ ПРОИГРАЛИ ${currentBet} TON!\nРакета взорвалась на ${multiplier.toFixed(2)}x`, 'lose');
             }
             
             totalGames++;
             updateStats();
             updateBalanceDisplay();
+            showResult(message, isWin ? 'win' : 'lose');
         }
 
-        // Отправка результата игры в бот
-        function sendGameResultToBot(gameData) {
-            if (tg) {
-                try {
-                    tg.sendData(JSON.stringify(gameData));
-                    console.log('Game result sent to bot:', gameData);
-                } catch (error) {
-                    console.error('Error sending game result to bot:', error);
+        // Отправка выигрыша в бот
+        async function sendWinToBot(winAmount, finalMultiplier) {
+            try {
+                const winData = {
+                    type: 'rocket_win',
+                    user_id: userData.id,
+                    bet: currentBet,
+                    multiplier: parseFloat(finalMultiplier.toFixed(2)),
+                    win_amount: parseFloat(winAmount.toFixed(2)),
+                    timestamp: Date.now()
+                };
+                
+                if (tg) {
+                    tg.sendData(JSON.stringify(winData));
+                    return { success: true };
+                } else {
+                    // В режиме разработки
+                    console.log('Win sent to bot (dev mode):', winData);
+                    return { success: true };
                 }
-            } else {
-                console.log('Game result (development mode):', gameData);
+            } catch (error) {
+                console.error('Error sending win to bot:', error);
+                return { success: false };
             }
         }
 
