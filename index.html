@@ -338,6 +338,21 @@
             text-align: center;
             padding: 20px;
         }
+
+        .refresh-btn {
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid #6366f1;
+            color: #6366f1;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(99, 102, 241, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -350,6 +365,7 @@
         <div class="balance-info">
             <div>Ваш баланс:</div>
             <div class="balance-amount" id="balance">Загрузка...</div>
+            <button class="refresh-btn" onclick="loadUserBalance()">🔄 Обновить баланс</button>
         </div>
 
         <div class="bet-selection">
@@ -459,9 +475,6 @@
                 
                 // Получаем данные пользователя
                 const user = tg.initDataUnsafe.user;
-                const queryParams = tg.initDataUnsafe.query_id ? 
-                    `?user_id=${user.id}&start_param=${tg.initData}` : 
-                    `?user_id=${user.id}`;
                 
                 userData = {
                     id: user.id,
@@ -472,11 +485,11 @@
                 
                 console.log('Telegram Web App initialized:', userData);
                 
-                // Загружаем баланс пользователя
+                // Загружаем баланс пользователя из бота
                 loadUserBalance();
                 
             } else {
-                // Режим разработки - используем тестовые данные
+                // Режим разработки
                 console.log('Running in development mode');
                 userData = {
                     id: 'test_user_123',
@@ -485,25 +498,39 @@
                     lastName: 'User'
                 };
                 
-                // Для тестирования устанавливаем баланс
+                // Для тестирования
                 userBalance = 50.00;
                 updateBalanceDisplay();
                 enableGameControls();
             }
         }
 
-        // Загрузка баланса пользователя
+        // Загрузка баланса пользователя из бота
         async function loadUserBalance() {
             try {
+                balanceElement.textContent = 'Загрузка...';
+                
                 // В реальном приложении здесь должен быть запрос к вашему API
-                // Для демонстрации используем фиктивный баланс
-                userBalance = 50.00; // Это должно приходить из бота
+                // Для демонстрации получаем баланс из параметров URL или используем фиктивный
+                const urlParams = new URLSearchParams(window.location.search);
+                const balanceFromUrl = urlParams.get('balance');
+                
+                if (balanceFromUrl) {
+                    userBalance = parseFloat(balanceFromUrl);
+                } else {
+                    // Если нет параметра, используем фиктивный баланс (в реальности должен быть запрос к боту)
+                    userBalance = 50.00;
+                }
+                
                 updateBalanceDisplay();
                 enableGameControls();
+                hideError();
+                
+                console.log('Balance loaded:', userBalance);
                 
             } catch (error) {
                 console.error('Error loading balance:', error);
-                showError('Ошибка загрузки баланса');
+                showError('Ошибка загрузки баланса. Попробуйте обновить.');
             }
         }
 
@@ -599,7 +626,7 @@
         }
 
         // Начало игры
-        function startGame() {
+        async function startGame() {
             if (gameActive) return;
             
             if (currentBet <= 0) {
@@ -612,11 +639,18 @@
                 return;
             }
 
+            // Отправляем запрос на списание средств в бот
+            const betResult = await sendBetToBot(currentBet);
+            if (!betResult.success) {
+                showError(betResult.error || 'Ошибка при списании средств');
+                return;
+            }
+
             gameActive = true;
             multiplier = 1.00;
             crashPoint = generateCrashPoint();
             
-            // В реальном приложении здесь должен быть запрос к боту для списания средств
+            // Обновляем локальный баланс
             userBalance -= currentBet;
             updateBalanceDisplay();
             
@@ -629,6 +663,30 @@
             gameInterval = setInterval(updateGame, 200);
             
             console.log('Game started. Bet:', currentBet, 'Crash point:', crashPoint.toFixed(2));
+        }
+
+        // Отправка ставки в бот
+        async function sendBetToBot(betAmount) {
+            try {
+                const betData = {
+                    type: 'rocket_bet',
+                    user_id: userData.id,
+                    bet: betAmount,
+                    timestamp: Date.now()
+                };
+                
+                if (tg) {
+                    tg.sendData(JSON.stringify(betData));
+                    return { success: true };
+                } else {
+                    // В режиме разработки имитируем успешное списание
+                    console.log('Bet placed (dev mode):', betAmount);
+                    return { success: true };
+                }
+            } catch (error) {
+                console.error('Error sending bet to bot:', error);
+                return { success: false, error: 'Ошибка связи с ботом' };
+            }
         }
 
         // Обновление игры
@@ -653,7 +711,7 @@
         }
 
         // Завершение игры
-        function endGame(isWin) {
+        async function endGame(isWin) {
             gameActive = false;
             clearInterval(gameInterval);
             
@@ -665,36 +723,20 @@
             let message = '';
             
             if (isWin) {
-                userBalance += winAmount;
-                message = `🎉 ВЫ ВЫИГРАЛИ ${winAmount.toFixed(2)} TON!\nСтавка: ${currentBet} TON × ${multiplier.toFixed(2)}x`;
-                wins++;
-                addToHistory(multiplier.toFixed(2), 'win', winAmount);
-                
-                // Отправка результата в бот
-                sendResultToBot({
-                    type: 'rocket_win',
-                    user_id: userData.id,
-                    bet: currentBet,
-                    multiplier: parseFloat(multiplier.toFixed(2)),
-                    win_amount: parseFloat(winAmount.toFixed(2)),
-                    new_balance: parseFloat(userBalance.toFixed(2)),
-                    timestamp: Date.now()
-                });
+                // Отправляем запрос на зачисление выигрыша в бот
+                const winResult = await sendWinToBot(winAmount, multiplier);
+                if (winResult.success) {
+                    userBalance += winAmount;
+                    message = `🎉 ВЫ ВЫИГРАЛИ ${winAmount.toFixed(2)} TON!\nСтавка: ${currentBet} TON × ${multiplier.toFixed(2)}x`;
+                    wins++;
+                    addToHistory(multiplier.toFixed(2), 'win', winAmount);
+                } else {
+                    message = `❌ Ошибка зачисления выигрыша!\nОбратитесь в поддержку.`;
+                }
             } else {
                 message = `💥 ВЫ ПРОИГРАЛИ ${currentBet} TON!\nРакета взорвалась на ${multiplier.toFixed(2)}x`;
                 losses++;
                 addToHistory(multiplier.toFixed(2), 'lose', 0);
-                
-                // Отправка результата в бот
-                sendResultToBot({
-                    type: 'rocket_loss',
-                    user_id: userData.id,
-                    bet: currentBet,
-                    multiplier: parseFloat(multiplier.toFixed(2)),
-                    win_amount: 0,
-                    new_balance: parseFloat(userBalance.toFixed(2)),
-                    timestamp: Date.now()
-                });
             }
             
             totalGames++;
@@ -703,19 +745,53 @@
             showResult(message, isWin ? 'win' : 'lose');
         }
 
-        // Отправка результата в Telegram бот
-        function sendResultToBot(result) {
-            if (tg) {
-                // Отправляем данные обратно в бот
-                tg.sendData(JSON.stringify(result));
-                console.log('Result sent to bot:', result);
+        // Отправка выигрыша в бот
+        async function sendWinToBot(winAmount, finalMultiplier) {
+            try {
+                const winData = {
+                    type: 'rocket_win',
+                    user_id: userData.id,
+                    bet: currentBet,
+                    multiplier: parseFloat(finalMultiplier.toFixed(2)),
+                    win_amount: parseFloat(winAmount.toFixed(2)),
+                    new_balance: parseFloat((userBalance + winAmount).toFixed(2)),
+                    timestamp: Date.now()
+                };
                 
-                // Закрываем Web App после отправки результата
-                setTimeout(() => {
-                    tg.close();
-                }, 3000);
-            } else {
-                console.log('Game result (development mode):', result);
+                if (tg) {
+                    tg.sendData(JSON.stringify(winData));
+                    return { success: true };
+                } else {
+                    // В режиме разработки
+                    console.log('Win sent to bot (dev mode):', winData);
+                    return { success: true };
+                }
+            } catch (error) {
+                console.error('Error sending win to bot:', error);
+                return { success: false };
+            }
+        }
+
+        // Отправка проигрыша в бот
+        async function sendLossToBot() {
+            try {
+                const lossData = {
+                    type: 'rocket_loss',
+                    user_id: userData.id,
+                    bet: currentBet,
+                    multiplier: parseFloat(multiplier.toFixed(2)),
+                    win_amount: 0,
+                    new_balance: parseFloat(userBalance.toFixed(2)),
+                    timestamp: Date.now()
+                };
+                
+                if (tg) {
+                    tg.sendData(JSON.stringify(lossData));
+                } else {
+                    console.log('Loss sent to bot (dev mode):', lossData);
+                }
+            } catch (error) {
+                console.error('Error sending loss to bot:', error);
             }
         }
 
