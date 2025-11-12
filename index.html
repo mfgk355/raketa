@@ -445,6 +445,57 @@
         const customBetInput = document.getElementById('customBet');
         const errorMessage = document.getElementById('errorMessage');
 
+        // Сохранение статистики в localStorage
+        function saveGameStats(isWin, amount, multiplier) {
+            const stats = JSON.parse(localStorage.getItem('rocket_stats') || '{}');
+            
+            if (isWin) {
+                stats.totalWins = (stats.totalWins || 0) + 1;
+                stats.totalWinAmount = (stats.totalWinAmount || 0) + amount;
+                stats.biggestWin = Math.max(stats.biggestWin || 0, amount);
+            } else {
+                stats.totalLosses = (stats.totalLosses || 0) + 1;
+                stats.totalLossAmount = (stats.totalLossAmount || 0) + amount;
+            }
+            
+            stats.totalGames = (stats.totalGames || 0) + 1;
+            stats.lastPlayed = new Date().toISOString();
+            
+            // Сохраняем историю игр
+            stats.gameHistory = stats.gameHistory || [];
+            stats.gameHistory.unshift({
+                timestamp: new Date().toISOString(),
+                result: isWin ? 'win' : 'lose',
+                amount: amount,
+                multiplier: multiplier,
+                bet: currentBet
+            });
+            
+            // Ограничиваем историю последними 50 играми
+            if (stats.gameHistory.length > 50) {
+                stats.gameHistory = stats.gameHistory.slice(0, 50);
+            }
+            
+            localStorage.setItem('rocket_stats', JSON.stringify(stats));
+            updateStatsDisplay(stats);
+        }
+
+        // Обновление отображения статистики
+        function updateStatsDisplay(stats) {
+            if (!stats) return;
+            
+            document.getElementById('totalGames').textContent = stats.totalGames || 0;
+            document.getElementById('wins').textContent = stats.totalWins || 0;
+            document.getElementById('losses').textContent = stats.totalLosses || 0;
+        }
+
+        // Загрузка статистики при запуске
+        function loadGameStats() {
+            const stats = JSON.parse(localStorage.getItem('rocket_stats') || '{}');
+            updateStatsDisplay(stats);
+            return stats;
+        }
+
         // Инициализация Telegram Web App
         function initTelegramApp() {
             if (window.Telegram && Telegram.WebApp) {
@@ -675,6 +726,9 @@
             
             const winAmount = isWin ? currentBet * multiplier : 0;
             
+            // Сохраняем статистику локально
+            saveGameStats(isWin, isWin ? winAmount : currentBet, multiplier);
+            
             if (isWin) {
                 // Отправляем запрос на зачисление выигрыша в бот
                 const winResult = await sendWinToBot(winAmount, multiplier);
@@ -824,6 +878,7 @@
             updateMultiplierDisplay();
             updateStats();
             updateHistoryDisplay();
+            loadGameStats(); // Загружаем статистику
             
             startBtn.addEventListener('click', startGame);
             cashoutBtn.addEventListener('click', cashOut);
