@@ -669,19 +669,23 @@
             try {
                 const betData = {
                     type: 'rocket_bet',
-                    user_id: userData.id,
                     bet: betAmount,
                     timestamp: Date.now()
                 };
                 
                 if (tg) {
+                    // Отправляем данные через Telegram Web App
                     tg.sendData(JSON.stringify(betData));
-                    return { success: true };
+                    // Ждем ответа от бота (простой способ имитации)
+                    return new Promise((resolve) => {
+                        setTimeout(() => resolve({ success: true }), 100);
+                    });
                 } else {
                     // В режиме разработки имитируем успешное списание
                     return { success: true };
                 }
             } catch (error) {
+                console.error('Ошибка отправки ставки:', error);
                 return { success: false, error: 'Ошибка связи с ботом' };
             }
         }
@@ -759,7 +763,6 @@
             try {
                 const lossData = {
                     type: 'rocket_loss',
-                    user_id: userData.id,
                     bet: betAmount,
                     multiplier: parseFloat(finalMultiplier.toFixed(2)),
                     timestamp: Date.now()
@@ -767,11 +770,14 @@
                 
                 if (tg) {
                     tg.sendData(JSON.stringify(lossData));
-                    return { success: true };
+                    return new Promise((resolve) => {
+                        setTimeout(() => resolve({ success: true }), 100);
+                    });
                 } else {
                     return { success: true };
                 }
             } catch (error) {
+                console.error('Ошибка отправки проигрыша:', error);
                 return { success: false, error: 'Ошибка связи с ботом' };
             }
         }
@@ -781,7 +787,6 @@
             try {
                 const winData = {
                     type: 'rocket_win',
-                    user_id: userData.id,
                     bet: currentBet,
                     multiplier: parseFloat(finalMultiplier.toFixed(2)),
                     win_amount: parseFloat(winAmount.toFixed(2)),
@@ -790,11 +795,14 @@
                 
                 if (tg) {
                     tg.sendData(JSON.stringify(winData));
-                    return { success: true };
+                    return new Promise((resolve) => {
+                        setTimeout(() => resolve({ success: true }), 100);
+                    });
                 } else {
                     return { success: true };
                 }
             } catch (error) {
+                console.error('Ошибка отправки выигрыша:', error);
                 return { success: false, error: 'Ошибка связи с ботом' };
             }
         }
