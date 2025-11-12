@@ -333,6 +333,16 @@
             margin: 10px 0;
             border: 1px solid #ef4444;
         }
+
+        .debug-info {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.8rem;
+            color: #a0a0c0;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -385,6 +395,11 @@
             </div>
 
             <div id="result"></div>
+        </div>
+
+        <div class="debug-info" id="debugInfo" style="display: none;">
+            <strong>Отладочная информация:</strong><br>
+            <span id="debugText">Ожидание данных...</span>
         </div>
 
         <div class="history">
@@ -444,6 +459,15 @@
         const betButtons = document.getElementById('betButtons');
         const customBetInput = document.getElementById('customBet');
         const errorMessage = document.getElementById('errorMessage');
+        const debugInfo = document.getElementById('debugInfo');
+        const debugText = document.getElementById('debugText');
+
+        // Функция для отладки
+        function showDebugInfo(message) {
+            debugText.textContent = message;
+            debugInfo.style.display = 'block';
+            console.log('DEBUG:', message);
+        }
 
         // Сохранение статистики в localStorage
         function saveGameStats(isWin, amount, multiplier) {
@@ -478,6 +502,8 @@
             
             localStorage.setItem('rocket_stats', JSON.stringify(stats));
             updateStatsDisplay(stats);
+            
+            showDebugInfo(`Сохранена статистика: ${isWin ? 'ПОБЕДА' : 'ПОРАЖЕНИЕ'}, сумма: ${amount}, множитель: ${multiplier}`);
         }
 
         // Обновление отображения статистики
@@ -493,6 +519,7 @@
         function loadGameStats() {
             const stats = JSON.parse(localStorage.getItem('rocket_stats') || '{}');
             updateStatsDisplay(stats);
+            showDebugInfo(`Загружена статистика: ${stats.totalGames || 0} игр`);
             return stats;
         }
 
@@ -518,11 +545,13 @@
                     updateBalanceDisplay();
                     enableGameControls();
                     
+                    showDebugInfo(`Telegram Web App инициализирован: user_id=${userId}, balance=${balance}`);
                     console.log('Telegram Web App initialized:', userData);
                 } else {
                     console.error('Missing or invalid user_id or balance in URL parameters');
                     startBtn.disabled = true;
                     balanceElement.textContent = 'Ошибка: Данные не загружены';
+                    showDebugInfo('Ошибка: user_id или balance не найдены в URL');
                 }
                 
             } else {
@@ -535,6 +564,7 @@
                 userBalance = 100.00;
                 updateBalanceDisplay();
                 enableGameControls();
+                showDebugInfo('Режим разработки активирован');
             }
         }
 
@@ -610,12 +640,15 @@
             
             customBetInput.value = bet === parseFloat(customBetInput.value) ? bet : '';
             updateMultiplierDisplay();
+            
+            showDebugInfo(`Выбрана ставка: ${bet} TON`);
         }
 
         // Показать ошибку
         function showError(message) {
             errorMessage.textContent = message;
             errorMessage.style.display = 'block';
+            showDebugInfo(`ОШИБКА: ${message}`);
         }
 
         // Скрыть ошибку
@@ -643,6 +676,8 @@
                 return;
             }
 
+            showDebugInfo(`Начало игры: ставка ${currentBet} TON`);
+
             // Сначала отправляем запрос на списание ставки
             const betResult = await sendBetToBot(currentBet);
             if (!betResult.success) {
@@ -667,6 +702,7 @@
             
             gameInterval = setInterval(updateGame, 200);
             
+            showDebugInfo(`Игра начата! Ставка: ${currentBet}, Точка взрыва: ${crashPoint.toFixed(2)}`);
             console.log('Game started. Bet:', currentBet, 'Crash point:', crashPoint.toFixed(2));
         }
 
@@ -680,16 +716,21 @@
                     timestamp: Date.now()
                 };
                 
+                showDebugInfo(`Отправка ставки в бот: ${betAmount} TON`);
+                
                 if (tg) {
                     tg.sendData(JSON.stringify(betData));
+                    showDebugInfo('Данные отправлены через Telegram Web App');
                     return { success: true };
                 } else {
                     // В режиме разработки имитируем успешное списание
+                    showDebugInfo('Режим разработки: ставка принята');
                     console.log('Bet placed (dev mode):', betAmount);
                     return { success: true };
                 }
             } catch (error) {
                 console.error('Error sending bet to bot:', error);
+                showDebugInfo(`Ошибка отправки ставки: ${error}`);
                 return { success: false, error: 'Ошибка связи с ботом' };
             }
         }
@@ -712,6 +753,7 @@
         // Забрать выигрыш
         function cashOut() {
             if (!gameActive) return;
+            showDebugInfo(`Игрок забрал выигрыш на множителе: ${multiplier.toFixed(2)}x`);
             endGame(true);
         }
 
@@ -731,30 +773,34 @@
             
             if (isWin) {
                 // Отправляем запрос на зачисление выигрыша в бот
+                showDebugInfo(`Отправка выигрыша в бот: ${winAmount} TON (множитель: ${multiplier.toFixed(2)}x)`);
                 const winResult = await sendWinToBot(winAmount, multiplier);
                 if (winResult.success) {
-                    // Обновляем локальный баланс только после подтверждения от бота
                     userBalance += winAmount;
                     message = `🎉 ПОЗДРАВЛЯЕМ! 🎉
 Вы выиграли ${winAmount.toFixed(2)} TON!
 Ставка: ${currentBet} TON × ${multiplier.toFixed(2)}x`;
                     wins++;
                     addToHistory(multiplier.toFixed(2), 'win', winAmount);
+                    showDebugInfo('Выигрыш успешно обработан');
                 } else {
                     message = `❌ Ошибка зачисления выигрыша!
 Обратитесь в поддержку.`;
+                    showDebugInfo('Ошибка зачисления выигрыша');
                 }
             } else {
-                // Проигрыш - отправляем данные о проигрыше
+                showDebugInfo(`Отправка проигрыша в бот: ставка ${currentBet} TON потеряна`);
                 const lossResult = await sendLossToBot(currentBet, multiplier);
                 if (lossResult.success) {
                     message = `💥 ВЫ ПРОИГРАЛИ ${currentBet} TON!
 Ракета взорвалась на ${multiplier.toFixed(2)}x`;
                     losses++;
                     addToHistory(multiplier.toFixed(2), 'lose', 0);
+                    showDebugInfo('Проигрыш успешно обработан');
                 } else {
                     message = `❌ Ошибка обработки проигрыша!
 Обратитесь в поддержку.`;
+                    showDebugInfo('Ошибка обработки проигрыша');
                 }
             }
             
@@ -775,6 +821,8 @@
                     timestamp: Date.now()
                 };
                 
+                showDebugInfo(`Отправка данных проигрыша: ${JSON.stringify(lossData)}`);
+                
                 if (tg) {
                     tg.sendData(JSON.stringify(lossData));
                     console.log('Loss data sent to bot:', lossData);
@@ -786,6 +834,7 @@
                 }
             } catch (error) {
                 console.error('Error sending loss to bot:', error);
+                showDebugInfo(`Ошибка отправки проигрыша: ${error}`);
                 return { success: false, error: 'Ошибка связи с ботом' };
             }
         }
@@ -802,6 +851,8 @@
                     timestamp: Date.now()
                 };
                 
+                showDebugInfo(`Отправка данных выигрыша: ${JSON.stringify(winData)}`);
+                
                 if (tg) {
                     tg.sendData(JSON.stringify(winData));
                     console.log('Win data sent to bot:', winData);
@@ -813,6 +864,7 @@
                 }
             } catch (error) {
                 console.error('Error sending win to bot:', error);
+                showDebugInfo(`Ошибка отправки выигрыша: ${error}`);
                 return { success: false, error: 'Ошибка связи с ботом' };
             }
         }
