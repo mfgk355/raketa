@@ -681,7 +681,6 @@
                 if (winResult.success) {
                     // Обновляем локальный баланс только после подтверждения от бота
                     userBalance += winAmount;
-                    // Отображаем сообщение о выигрыше
                     message = `🎉 ПОЗДРАВЛЯЕМ! 🎉
 Вы выиграли ${winAmount.toFixed(2)} TON!
 Ставка: ${currentBet} TON × ${multiplier.toFixed(2)}x`;
@@ -692,16 +691,49 @@
 Обратитесь в поддержку.`;
                 }
             } else {
-                message = `💥 ВЫ ПРОИГРАЛИ ${currentBet} TON!
+                // Проигрыш - отправляем данные о проигрыше
+                const lossResult = await sendLossToBot(currentBet, multiplier);
+                if (lossResult.success) {
+                    message = `💥 ВЫ ПРОИГРАЛИ ${currentBet} TON!
 Ракета взорвалась на ${multiplier.toFixed(2)}x`;
-                losses++;
-                addToHistory(multiplier.toFixed(2), 'lose', 0);
+                    losses++;
+                    addToHistory(multiplier.toFixed(2), 'lose', 0);
+                } else {
+                    message = `❌ Ошибка обработки проигрыша!
+Обратитесь в поддержку.`;
+                }
             }
             
             totalGames++;
             updateStats();
             updateBalanceDisplay();
             showResult(message, isWin ? 'win' : 'lose');
+        }
+
+        // Отправка проигрыша в бот
+        async function sendLossToBot(betAmount, finalMultiplier) {
+            try {
+                const lossData = {
+                    type: 'rocket_loss',
+                    user_id: userData.id,
+                    bet: betAmount,
+                    multiplier: parseFloat(finalMultiplier.toFixed(2)),
+                    timestamp: Date.now()
+                };
+                
+                if (tg) {
+                    tg.sendData(JSON.stringify(lossData));
+                    console.log('Loss data sent to bot:', lossData);
+                    return { success: true };
+                } else {
+                    // В режиме разработки
+                    console.log('Loss data (dev mode):', lossData);
+                    return { success: true };
+                }
+            } catch (error) {
+                console.error('Error sending loss to bot:', error);
+                return { success: false, error: 'Ошибка связи с ботом' };
+            }
         }
 
         // Отправка выигрыша в бот
@@ -718,15 +750,16 @@
                 
                 if (tg) {
                     tg.sendData(JSON.stringify(winData));
+                    console.log('Win data sent to bot:', winData);
                     return { success: true };
                 } else {
                     // В режиме разработки
-                    console.log('Win sent to bot (dev mode):', winData);
+                    console.log('Win data (dev mode):', winData);
                     return { success: true };
                 }
             } catch (error) {
                 console.error('Error sending win to bot:', error);
-                return { success: false };
+                return { success: false, error: 'Ошибка связи с ботом' };
             }
         }
 
