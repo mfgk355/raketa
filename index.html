@@ -6,6 +6,7 @@
     <title>🚀 Cosmic Rocket</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* Стили остаются без изменений */
         * {
             margin: 0;
             padding: 0;
@@ -290,11 +291,11 @@
             font-size: 0.9rem;
         }
 
-        .history-item.win { 
+        .history-item.win {
             color: #10b981;
             border-left: 3px solid #10b981;
         }
-        .history-item.lose { 
+        .history-item.lose {
             color: #ef4444;
             border-left: 3px solid #ef4444;
         }
@@ -680,14 +681,19 @@
                 if (winResult.success) {
                     // Обновляем локальный баланс только после подтверждения от бота
                     userBalance += winAmount;
-                    message = `🎉 ВЫ ВЫИГРАЛИ ${winAmount.toFixed(2)} TON!\nСтавка: ${currentBet} TON × ${multiplier.toFixed(2)}x`;
+                    // Отображаем сообщение о выигрыше
+                    message = `🎉 ПОЗДРАВЛЯЕМ! 🎉
+Вы выиграли ${winAmount.toFixed(2)} TON!
+Ставка: ${currentBet} TON × ${multiplier.toFixed(2)}x`;
                     wins++;
                     addToHistory(multiplier.toFixed(2), 'win', winAmount);
                 } else {
-                    message = `❌ Ошибка зачисления выигрыша!\nОбратитесь в поддержку.`;
+                    message = `❌ Ошибка зачисления выигрыша!
+Обратитесь в поддержку.`;
                 }
             } else {
-                message = `💥 ВЫ ПРОИГРАЛИ ${currentBet} TON!\nРакета взорвалась на ${multiplier.toFixed(2)}x`;
+                message = `💥 ВЫ ПРОИГРАЛИ ${currentBet} TON!
+Ракета взорвалась на ${multiplier.toFixed(2)}x`;
                 losses++;
                 addToHistory(multiplier.toFixed(2), 'lose', 0);
             }
